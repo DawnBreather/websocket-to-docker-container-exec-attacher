@@ -10,7 +10,8 @@
 
 - Docker
 - Docker Compose
-- Go (Golang)
+- (MacOS only) /var/run/docker.sock MacOS Docker Desktop advanced feature `enabled`
+![](.readme/docker-advanced-feature.prerequisites.png)
 
 ## Getting Started
 
