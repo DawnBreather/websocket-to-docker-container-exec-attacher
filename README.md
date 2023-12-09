@@ -26,6 +26,12 @@ These instructions will get your copy of the project up and running on your loca
    
    # Spin down the stack
    docker compose -f .devops/docker-compose.yaml down --remove-orphans
+
+   # DOCKER (without docker-compose)
+   # build
+   docker buildx build --platform linux/amd64 -t tmp -f .devops/dockerfile .
+   # run
+   docker run -d --name wt-websocket --platform linux/amd64 -v /var/run/docker.sock:/var/run/docker.sock -p 4242:4242  tmp
    ```
 
    This command will build the Docker image for the WebSocket server and start it. The server will be listening on port 4242.
