@@ -1,5 +1,5 @@
 # Use an official Go runtime as a parent image
-FROM golang:1.21-alpine
+FROM golang:1.21-alpine as build
 
 # Set the working directory in the container
 WORKDIR /app
@@ -11,7 +11,11 @@ COPY . .
 RUN go mod download
 
 # Build your application
-RUN go build -o quic_shell_server main/main.go
+RUN go build -o /app/quic_shell_server main/main.go
+
+FROM debian:latest as app
+
+COPY --from=build /app/quic_shell_server /app/quick_shell_server
 
 # Run the application when the container starts
-CMD ["./quic_shell_server"]
+CMD ["/app/quic_shell_server"]
