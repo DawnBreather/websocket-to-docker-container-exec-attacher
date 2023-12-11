@@ -11,7 +11,7 @@ COPY . .
 RUN go mod download
 
 # Build your application
-RUN go build -o quic_shell_server .
+RUN go build -o quic_shell_server main/main.go
 
 # Run the application when the container starts
 CMD ["./quic_shell_server"]
