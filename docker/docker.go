@@ -9,13 +9,26 @@ import (
 	"io"
 	"log"
 	"os"
+	"quic_shell_server/db"
 )
+
+var Client *DockerClient
 
 type DockerClient struct {
 	cli *client.Client
 }
 
-func NewDockerClient() (*DockerClient, error) {
+func InitializeDockerClient() {
+	var err error
+	if Client == nil {
+		Client, err = newDockerClient()
+		if err != nil {
+			log.Fatalf("Failed to create Docker client: %v", err)
+		}
+	}
+}
+
+func newDockerClient() (*DockerClient, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
@@ -29,7 +42,7 @@ func (d *DockerClient) PullImage(image string) error {
 	return err
 }
 
-func (d *DockerClient) CreateAndStartContainer(image string, cmd []string) (string, error) {
+func (d *DockerClient) CreateAndStartContainer(image string, cmd []string, ttl int) (string, error) {
 	ctx := context.Background()
 	resp, err := d.cli.ContainerCreate(ctx, &container.Config{
 		OpenStdin:    true,
@@ -37,16 +50,27 @@ func (d *DockerClient) CreateAndStartContainer(image string, cmd []string) (stri
 		AttachStderr: true,
 		Cmd:          cmd,
 		Image:        image,
-		WorkingDir:   "",
-		Entrypoint:   nil,
+		Labels:       defaultDockerContainersLabels,
+		//WorkingDir:   "",
+		//Entrypoint: nil,
 	}, nil, nil, nil, "")
 	if err != nil {
 		return "", err
 	}
 
 	if err := d.cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		//log.Printf("Failed starting up container { %s }: %v", resp.ID, err)
 		return "", err
 	}
+
+	// Set TTL for the newly created container
+	func() {
+		var resTtl = ttl
+		if ttl == 0 {
+			resTtl = defaultDockerContainersTtlInMinutes
+		}
+		db.SetTtlInMinutesByContainerId(resp.ID, resTtl)
+	}()
 
 	return resp.ID, nil
 }
