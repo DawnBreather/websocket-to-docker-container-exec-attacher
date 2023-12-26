@@ -265,7 +265,7 @@ func setupContainerAndExec(client *docker.DockerClient, msg containerIDMessage) 
 	containerID := msg.ContainerID
 	image := func() string {
 		if msg.Image == "" {
-			return "docker.io/library/alpine:latest"
+			return docker.DefaultDockerImage
 		} else {
 			elements := strings.Split(msg.Image, "/")
 			if strings.Contains(elements[0], ".") {

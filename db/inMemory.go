@@ -2,6 +2,8 @@ package db
 
 import "github.com/gorilla/websocket"
 
+// TODO Implement Redis of Postgres instead of in-memory storage
+
 var containersTtlMap = map[string]int{}
 var containersWsConnectionsMap = map[string][]*websocket.Conn{}
 
