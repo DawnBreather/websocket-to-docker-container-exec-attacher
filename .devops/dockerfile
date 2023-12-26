@@ -15,7 +15,7 @@ RUN go build -o /app/quic_shell_server main/main.go
 
 FROM debian:latest as app
 
-COPY --from=build /app/quic_shell_server /app/quick_shell_server
+COPY --from=build /app/quic_shell_server /app/quic_shell_server
 
 # Run the application when the container starts
 CMD ["/app/quic_shell_server"]
