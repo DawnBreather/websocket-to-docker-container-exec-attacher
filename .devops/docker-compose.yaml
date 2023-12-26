@@ -2,12 +2,14 @@ version: '3.8'
 
 services:
   websocket-server:
+    container_name: wt-server
     build:
-      context: .
-      dockerfile: Dockerfile
+      #context: /Users/won/lab/buildtools/helpers/golang/commons/app/remote_shell/quic_shell/server
+      context: ..
+      dockerfile: .devops/dockerfile
     ports:
       - "4242:4242"
     volumes:
-      - .:/app
+      #- .:/app
       - /var/run/docker.sock:/var/run/docker.sock
-    command: ./quic_shell_server
+    command: /app/quic_shell_server
