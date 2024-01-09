@@ -5,5 +5,5 @@ var (
 		"by": "LMS_DOCKER_CONTAINERS_SPAWNER",
 	}
 	defaultDockerContainersTtlInMinutes = 180
-	DefaultDockerImage                  = "docker.io/library/alpine:latest"
+	DefaultDockerImage                  = "docker.io/library/debian:latest"
 )

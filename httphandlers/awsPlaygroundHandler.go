@@ -1,7 +1,8 @@
-package main
+package httphandlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -11,28 +12,19 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"quic_shell_server/docker"
-	"quic_shell_server/httphandlers"
+	"quic_shell_server/db"
 	"time"
 )
 
-func main() {
-	//testAws("807641583053", "user-us-east-1", "accessKeyId", "secretAccessKey", 10800)
-	//os.Exit(0)
-	docker.InitializeDockerClient()
-
-	// Start expired Docker containers cleanup job
-	go func() {
-		for {
-			time.Sleep(6 * time.Second)
-			err := docker.StopAndDeleteContainersWithTtlExpired(context.Background(), docker.Client)
-			if err != nil {
-				log.Printf("Failed removing expired Docker containers: %v", err)
-			}
-		}
-	}()
-
-	httphandlers.StartWebServer()
+func awsPlaygroundHandler(w http.ResponseWriter, r *http.Request) {
+	awsCredentials := db.GetAvailableCredentials()
+	if awsCredentials == nil {
+		http.Error(w, "No available AWS credentials", http.StatusInternalServerError)
+		return
+	}
+	loginUrl := testAws(awsCredentials.AccountId, awsCredentials.Username, awsCredentials.AwsAccessKeyId, awsCredentials.AwsAccessSecret, 3600)
+	// respond loginUrl in JSON format {"url":${loginUrl}}
+	json.NewEncoder(w).Encode(map[string]string{"url": loginUrl})
 }
 
 func testAws(accountId, username, accessKeyId, secretAccessKey string, durationSeconds int) (loginUrl string) {
