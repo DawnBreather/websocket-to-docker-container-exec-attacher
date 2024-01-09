@@ -24,7 +24,11 @@ func awsPlaygroundHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	loginUrl := testAws(awsCredentials.AccountId, awsCredentials.Username, awsCredentials.AwsAccessKeyId, awsCredentials.AwsAccessSecret, 3600)
 	// respond loginUrl in JSON format {"url":${loginUrl}}
-	json.NewEncoder(w).Encode(map[string]string{"url": loginUrl})
+	//json.NewEncoder(w).Encode(map[string]string{"url": loginUrl})
+	_, err := w.Write([]byte(loginUrl))
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func testAws(accountId, username, accessKeyId, secretAccessKey string, durationSeconds int) (loginUrl string) {
