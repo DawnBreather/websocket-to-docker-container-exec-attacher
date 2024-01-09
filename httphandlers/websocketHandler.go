@@ -89,10 +89,10 @@ func setupContainerAndExec(client *docker.DockerClient, msg containerIDMessage) 
 
 	cmd := func() []string {
 		if len(msg.CMD) == 0 {
-			return []string{"/bin/sh"}
+			return []string{"/bin/bash"}
 		}
 		if msg.CMD == "" {
-			return []string{"/bin/sh"}
+			return []string{"/bin/bash"}
 		}
 		return []string{msg.CMD}
 	}()

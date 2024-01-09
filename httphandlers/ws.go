@@ -28,9 +28,29 @@ func (wsa *WebSocketAdapter) Read(p []byte) (n int, err error) {
 	return
 }
 
+//func (wsa *WebSocketAdapter) Write(p []byte) (n int, err error) {
+//	wsa.logMessage("Sending", websocket.TextMessage, p)
+//	err = wsa.Conn.WriteMessage(websocket.TextMessage, p)
+//	if err != nil {
+//		log.Printf("Error writing WebSocket message: %v", err)
+//	} else {
+//		n = len(p)
+//	}
+//	return
+//}
+
 func (wsa *WebSocketAdapter) Write(p []byte) (n int, err error) {
-	wsa.logMessage("Sending", websocket.TextMessage, p)
-	err = wsa.Conn.WriteMessage(websocket.TextMessage, p)
+	var messageType int
+	//if wsa.isLikelyText(p) {
+	//	messageType = websocket.TextMessage
+	//} else {
+	//	messageType = websocket.BinaryMessage
+	//}
+
+	messageType = websocket.BinaryMessage
+
+	wsa.logMessage("Sending", messageType, p)
+	err = wsa.Conn.WriteMessage(messageType, p)
 	if err != nil {
 		log.Printf("Error writing WebSocket message: %v", err)
 	} else {
