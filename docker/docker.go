@@ -117,6 +117,7 @@ func (d *DockerClient) CreateExecInstance(containerID string, cmd []string) (str
 		AttachStdout: true,
 		AttachStderr: true,
 		Tty:          true,
+		Privileged:   true,
 	}
 
 	execIDResp, err := d.cli.ContainerExecCreate(ctx, containerID, execConfig)
