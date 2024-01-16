@@ -1,0 +1,64 @@
+// const term = new Terminal();
+// term.open(document.getElementById('terminal'));
+//
+// const ws = new WebSocket('ws://localhost:4242/ws');
+//
+// ws.binaryType = 'arraybuffer'; // Set WebSocket to receive binary data
+//
+// ws.onopen = function() {
+//   term.writeln('Connected to WebSocket server');
+// };
+//
+// ws.onmessage = function(event) {
+//   const msg = new Uint8Array(event.data);
+//   term.write(msg); // Write binary data to xterm.js
+// };
+//
+// ws.onclose = function() {
+//   term.writeln('Disconnected from WebSocket server');
+// };
+//
+// ws.onerror = function(error) {
+//   console.error('WebSocket error:', error);
+// };
+//
+// term.onData(data => {
+//   ws.send(data); // Send data from xterm.js to WebSocket server
+// });
+
+
+const terminal = new Terminal();
+terminal.open(document.getElementById('terminal'));
+
+const socket = new WebSocket('ws://localhost:4242/ws');
+socket.binaryType = 'arraybuffer';
+
+socket.onopen = function (event) {
+  terminal.write('Connected to server\r\n');
+};
+
+socket.onmessage = function (event) {
+  const message = new Uint8Array(event.data);
+
+  // Debugging: Log the raw binary data
+  console.log("Raw Binary Data:", message);
+
+  const str = new TextDecoder("utf-8").decode(message);
+
+  // Debugging: Log the converted string
+  console.log("Converted String:", str);
+
+  terminal.write(str);
+};
+
+terminal.onData(data => {
+  socket.send(data);
+});
+
+socket.onclose = function (event) {
+  terminal.write('\r\nConnection closed');
+};
+
+socket.onerror = function (error) {
+  console.error('WebSocket Error: ' + error);
+};

@@ -60,6 +60,23 @@ func manageWebSocketConnection(conn *websocket.Conn) {
 	handleWebSocketMessages(conn, docker.Client, containerID)
 }
 
+func manageWebSocketConnectionForTesting(conn *websocket.Conn) {
+	log.Printf("Starting a new WebSocket session")
+
+	//containerIdMessage, err := readContainerIDMessage(conn)
+	//if err != nil {
+	//	return
+	//}
+
+	containerID, execID := setupContainerAndExec(docker.Client, containerIDMessage{}) //, image, cmd)
+	if containerID == "" || execID == "" {
+		return
+	}
+
+	attachToExecInstance(conn, docker.Client, execID)
+	handleWebSocketMessages(conn, docker.Client, containerID)
+}
+
 func readContainerIDMessage(conn *websocket.Conn) (containerIDMessage, error) {
 	var msg containerIDMessage
 	err := conn.ReadJSON(&msg)
@@ -89,10 +106,10 @@ func setupContainerAndExec(client *docker.DockerClient, msg containerIDMessage) 
 
 	cmd := func() []string {
 		if len(msg.CMD) == 0 {
-			return []string{"/bin/bash"}
+			return []string{"/bin/bash", "-li"}
 		}
 		if msg.CMD == "" {
-			return []string{"/bin/bash"}
+			return []string{"/bin/bash", "-li"}
 		}
 		return []string{msg.CMD}
 	}()

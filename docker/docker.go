@@ -51,6 +51,9 @@ func (d *DockerClient) CreateAndStartContainer(image string, cmd []string, ttl i
 		Cmd:          cmd,
 		Image:        image,
 		Labels:       defaultDockerContainersLabels,
+		Env: []string{
+			"TERM=xterm",
+		},
 		//WorkingDir:   "",
 		//Entrypoint: nil,
 	}, nil, nil, nil, "")
@@ -127,7 +130,7 @@ func (d *DockerClient) CreateExecInstance(containerID string, cmd []string) (str
 func (d *DockerClient) AttachExecInstance(execID string, stream io.ReadWriteCloser) error {
 	ctx := context.Background()
 
-	execStartCheck := types.ExecStartCheck{Tty: false} // Ensure this matches with your exec config
+	execStartCheck := types.ExecStartCheck{Tty: true} // Ensure this matches with your exec config
 
 	execAttachResp, err := d.cli.ContainerExecAttach(ctx, execID, execStartCheck)
 	if err != nil {
@@ -170,7 +173,7 @@ func copyWithLogging(direction string, dst io.Writer, src io.Reader) (int64, err
 			data := buf[0:nr]
 			// Log as both string and hexadecimal for completeness
 			log.Printf("%s: String Data: %s", direction, string(data))
-			//log.Printf("%s: Hex Data: %x", direction, data)
+			log.Printf("%s: Hex Data: %x", direction, data)
 
 			nw, ew := dst.Write(data)
 			if nw > 0 {
