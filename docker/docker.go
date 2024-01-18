@@ -54,9 +54,12 @@ func (d *DockerClient) CreateAndStartContainer(image string, cmd []string, ttl i
 		Env: []string{
 			"TERM=xterm",
 		},
+
 		//WorkingDir:   "",
 		//Entrypoint: nil,
-	}, nil, nil, nil, "")
+	}, &container.HostConfig{
+		Privileged: true,
+	}, nil, nil, "")
 	if err != nil {
 		return "", err
 	}

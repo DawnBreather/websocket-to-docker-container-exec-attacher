@@ -17,5 +17,7 @@ FROM debian:latest as app
 
 COPY --from=build /app/quic_shell_server /app/quic_shell_server
 
+RUN apt update && apt install -y ca-certificates && rm -rf /var/lib/{apt,dpkg,cache,log}/
+
 # Run the application when the container starts
 CMD ["/app/quic_shell_server"]
