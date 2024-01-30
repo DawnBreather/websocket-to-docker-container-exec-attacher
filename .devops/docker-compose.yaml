@@ -8,7 +8,13 @@ services:
       context: ..
       dockerfile: .devops/dockerfile
     ports:
-      - "4242:4242"
+      - "80:4242"
+    environment:
+      AWS_REGION: us-east-1
+      AWS_SECRET_ACCESS_KEY: ""
+      AWS_ACCESS_KEY_ID: ""
+      DEFAULT_DOCKER_IMAGE: amazonlinux:2
+      DEFAULT_DOCKER_CONTAINER_SHELL: /bin/bash
     volumes:
       #- .:/app
       - /var/run/docker.sock:/var/run/docker.sock
