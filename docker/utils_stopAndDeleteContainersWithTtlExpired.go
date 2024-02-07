@@ -20,7 +20,7 @@ func StopAndDeleteContainersWithTtlExpired(ctx context.Context, client *DockerCl
 		if err != nil {
 			log.Printf("Failed getting container running time for container_id { %s }", container.ID)
 			continue
-		} else if minutes > db.GetTtlInMinutesByContainerId(container.ID) {
+		} else if minutes > db.GetTtlInSecondsByContainerId(container.ID) {
 			timeout := 3
 			err = client.cli.ContainerStop(ctx, container.ID, StopOptions{
 				Signal:  "9",

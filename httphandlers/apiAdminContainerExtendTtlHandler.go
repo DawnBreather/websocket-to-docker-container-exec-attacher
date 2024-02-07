@@ -24,17 +24,17 @@ func apiAdminContainerExtendTtlHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeResponse(w, http.StatusInternalServerError, err.Error())
 	}
-	minutes, err := strconv.Atoi(vars["minutes"])
+	seconds, err := strconv.Atoi(vars["seconds"])
 	if err != nil {
-		log.Printf("Failed to parse minutes { %s } into type of Int: %v", vars["minutes"], err)
+		log.Printf("Failed to parse seconds { %s } into type of Int: %v", vars["seconds"], err)
 	} else {
-		db.SetTtlInMinutesByContainerId(id, minutes+db.GetTtlInMinutesByContainerId(id))
+		db.SetTtlInSecondsByContainerId(id, seconds+db.GetTtlInSecondsByContainerId(id))
 	}
 	fmt.Fprintf(w, string(utils.MustMarshal(containerIDMessage{
 		ContainerID:  id,
 		Image:        container.Image,
-		TTL:          db.GetTtlInMinutesByContainerId(id),
+		TTL:          db.GetTtlInSecondsByContainerId(id),
 		CMD:          container.Command,
-		RemainingTTL: db.GetTtlInMinutesByContainerId(id) - containerRunningTime,
+		RemainingTTL: db.GetTtlInSecondsByContainerId(id) - containerRunningTime*60,
 	})))
 }

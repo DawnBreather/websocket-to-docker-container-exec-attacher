@@ -18,18 +18,18 @@ func apiAdminContainerHandler(w http.ResponseWriter, r *http.Request) {
 		writeResponse(w, http.StatusNotFound, err.Error())
 	}
 
-	containerRunningTime, err := docker.GetContainerRunningTime(context.Background(), docker.Client, id)
-	if err != nil {
-		if err != nil {
-			writeResponse(w, http.StatusInternalServerError, err.Error())
-		}
-	}
+	//containerRunningTime, err := docker.GetContainerRunningTime(context.Background(), docker.Client, id)
+	//if err != nil {
+	//	if err != nil {
+	//		writeResponse(w, http.StatusInternalServerError, err.Error())
+	//	}
+	//}
 
 	fmt.Fprintf(w, string(utils.MustMarshal(containerIDMessage{
 		ContainerID:  id,
 		Image:        container.Image,
-		TTL:          db.GetTtlInMinutesByContainerId(id),
+		TTL:          db.GetTtlInSecondsByContainerId(id),
 		CMD:          container.Command,
-		RemainingTTL: db.GetTtlInMinutesByContainerId(id) - containerRunningTime,
+		RemainingTTL: db.GetTtlInSecondsByContainerId(id) - db.GetStartdatetimeInSecondsByContainerId(id),
 	})))
 }
