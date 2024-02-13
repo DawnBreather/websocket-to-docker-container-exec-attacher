@@ -7,6 +7,7 @@ import (
 	. "github.com/docker/docker/api/types/container"
 	"log"
 	"quic_shell_server/db"
+	"time"
 )
 
 func StopAndDeleteContainersWithTtlExpired(ctx context.Context, client *DockerClient) error {
@@ -21,32 +22,52 @@ func StopAndDeleteContainersWithTtlExpired(ctx context.Context, client *DockerCl
 			log.Printf("Failed getting container running time for container_id { %s }", container.ID)
 			continue
 		} else if minutes > db.GetTtlInSecondsByContainerId(container.ID) {
-			timeout := 3
-			err = client.cli.ContainerStop(ctx, container.ID, StopOptions{
-				Signal:  "9",
-				Timeout: &timeout,
-			})
+			err = StopContainerAndDelete(ctx, client, container.ID)
 			if err != nil {
-				log.Printf("Failed to stop container { %s }", container.ID)
+				log.Printf(err.Error())
 			}
-
-			err = client.cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{
-				RemoveVolumes: true,
-				RemoveLinks:   true,
-				Force:         true,
-			})
-
-			if err != nil {
-				log.Printf("Failed to remove container { %s }", container.ID)
-			}
-
-			for _, conn := range db.GetWsConnectionByContainerId(container.ID) {
-				conn.Close()
-			}
-
-			db.DeleteContainerById(container.ID)
 		}
 	}
 
+	return nil
+}
+
+func StopContainerAndDelete(ctx context.Context, client *DockerClient, containerId string) error {
+	var err error
+	var timeout = 0
+	err = client.cli.ContainerStop(ctx, containerId, StopOptions{
+		Signal:  "9",
+		Timeout: &timeout,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to stop container { %s }", containerId)
+	}
+
+	for {
+		time.Sleep(1 * time.Second)
+		json, err := client.cli.ContainerInspect(ctx, containerId)
+		if err != nil {
+			break
+		}
+		if json.State.Status == "exited" {
+			break
+		}
+	}
+
+	err = client.cli.ContainerRemove(ctx, containerId, types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		RemoveLinks:   true,
+		Force:         true,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to remove container { %s }", containerId)
+	}
+
+	for _, conn := range db.GetWsConnectionByContainerId(containerId) {
+		conn.Close()
+	}
+
+	db.DeleteContainerById(containerId)
 	return nil
 }

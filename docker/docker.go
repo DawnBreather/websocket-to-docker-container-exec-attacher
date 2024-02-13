@@ -62,8 +62,9 @@ func (d *DockerClient) CreateAndStartContainer(image string, cmd []string, ttl i
 	}, &container.HostConfig{
 		Privileged: true,
 		Binds: []string{
-			fmt.Sprintf(`%s:%s:%s`, "/sys/fs/cgroup", "/sys/fs/cgroup", "ro"),
+			fmt.Sprintf(`%s:%s:%s`, "/sys/fs/cgroup", "/sys/fs/cgroup", "rw"),
 		},
+		CgroupnsMode: container.CgroupnsModeHost,
 	}, nil, nil, "")
 	if err != nil {
 		return "", err

@@ -38,3 +38,15 @@ func apiAdminContainerExtendTtlHandler(w http.ResponseWriter, r *http.Request) {
 		RemainingTTL: db.GetTtlInSecondsByContainerId(id) - containerRunningTime*60,
 	})))
 }
+
+func apiAdminContainerStopAndRemoveHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	err := docker.StopContainerAndDelete(ctx, docker.Client, id)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, err.Error())
+	}
+	writeResponse(w, http.StatusOK, "{}")
+}
