@@ -2,9 +2,9 @@ package docker
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"io"
@@ -46,25 +46,20 @@ func (d *DockerClient) PullImage(image string) error {
 func (d *DockerClient) CreateAndStartContainer(image string, cmd []string, ttl int) (string, error) {
 	ctx := context.Background()
 	resp, err := d.cli.ContainerCreate(ctx, &container.Config{
-		//OpenStdin:    true,
-		//AttachStdout: true,
-		//AttachStderr: true,
-		//Cmd:          cmd,
-
 		Image:  image,
 		Labels: defaultDockerContainersLabels,
-		//Env: []string{
-		//	"TERM=xterm",
-		//},
-
-		//WorkingDir:   "",
-		//Entrypoint: nil,
 	}, &container.HostConfig{
 		Privileged: true,
-		Binds: []string{
-			fmt.Sprintf(`%s:%s:%s`, "/sys/fs/cgroup", "/sys/fs/cgroup", "rw"),
+		Mounts: []mount.Mount{
+			{
+				Type:   mount.TypeTmpfs,
+				Target: "/sys/fs/cgroup",
+				TmpfsOptions: &mount.TmpfsOptions{
+					Mode: 1777,
+				},
+			},
 		},
-		CgroupnsMode: container.CgroupnsModeHost,
+		AutoRemove: true,
 	}, nil, nil, "")
 	if err != nil {
 		return "", err
