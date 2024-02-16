@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"quic_shell_server/db"
+	"strings"
 )
 
 var Client *DockerClient
@@ -152,17 +153,32 @@ func (d *DockerClient) AttachExecInstance(execID string, stream io.ReadWriteClos
 	// Setting up bidirectional stream copy with logging
 	errChan := make(chan error, 2)
 
-	// Copy from the WebSocket stream to the Docker exec's stdin with logging
+	// Create a new CommandFilter
+	filter := NewCommandFilter()
+
+	// Intercepting and processing stdin
 	go func() {
-		_, err := copyWithLogging("WebSocket to Docker", execAttachResp.Conn, stream)
+		_, err := filter.CopyAndInspect("WebSocket to Docker", execAttachResp.Conn, stream)
 		errChan <- err
 	}()
 
-	// Copy from the Docker exec's stdout/stderr to the WebSocket stream with logging
+	// Processing stdout/stderr based on command filter state
 	go func() {
-		_, err := copyWithLogging("Docker to WebSocket", stream, execAttachResp.Reader)
+		_, err := filter.CopyWithConditionalLogging("Docker to WebSocket", stream, execAttachResp.Reader)
 		errChan <- err
 	}()
+
+	//// Copy from the WebSocket stream to the Docker exec's stdin with logging
+	//go func() {
+	//	_, err := copyWithLogging("WebSocket to Docker", execAttachResp.Conn, stream)
+	//	errChan <- err
+	//}()
+	////
+	//// Copy from the Docker exec's stdout/stderr to the WebSocket stream with logging
+	//go func() {
+	//	_, err := copyWithLogging("Docker to WebSocket", stream, execAttachResp.Reader)
+	//	errChan <- err
+	//}()
 
 	// Wait for the first error or completion
 	err = <-errChan
@@ -195,6 +211,84 @@ func copyWithLogging(direction string, dst io.Writer, src io.Reader) (int64, err
 		if er != nil {
 			if er != io.EOF {
 				log.Printf("%s: Read error: %v", direction, er)
+				return total, er
+			}
+			break
+		}
+	}
+	return total, nil
+}
+
+// CommandFilter is responsible for inspecting and filtering command output.
+type CommandFilter struct {
+	suppressOutput bool
+}
+
+// NewCommandFilter creates a new instance of CommandFilter.
+func NewCommandFilter() *CommandFilter {
+	return &CommandFilter{}
+}
+
+// CopyAndInspect copies data from src to dst, inspecting the data for commands.
+func (f *CommandFilter) CopyAndInspect(direction string, dst io.Writer, src io.Reader) (int64, error) {
+	buf := make([]byte, 32*1024)
+	var total int64
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			data := string(buf[:nr])
+			// Check for specific commands to suppress their output
+			if strings.Contains(data, "stty") && (strings.Contains(data, " cols") || strings.Contains(data, " rows")) {
+				f.suppressOutput = true
+			} else {
+				// Reset suppression if the command is not matched
+				// This is a simplification; actual logic may need to be more sophisticated
+				f.suppressOutput = false
+			}
+
+			nw, ew := dst.Write(buf[:nr])
+			if nw > 0 {
+				total += int64(nw)
+			}
+			if ew != nil {
+				return total, ew
+			}
+			if nr != nw {
+				return total, io.ErrShortWrite
+			}
+		}
+		if er != nil {
+			if er != io.EOF {
+				return total, er
+			}
+			break
+		}
+	}
+	return total, nil
+}
+
+// CopyWithConditionalLogging copies data from src to dst, suppressing output if needed.
+func (f *CommandFilter) CopyWithConditionalLogging(direction string, dst io.Writer, src io.Reader) (int64, error) {
+	buf := make([]byte, 32*1024)
+	var total int64
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			if !f.suppressOutput {
+				nw, ew := dst.Write(buf[:nr])
+				if nw > 0 {
+					total += int64(nw)
+				}
+				if ew != nil {
+					return total, ew
+				}
+				if nr != nw {
+					return total, io.ErrShortWrite
+				}
+			}
+		}
+		if er != nil {
+			if er != io.EOF {
 				return total, er
 			}
 			break
