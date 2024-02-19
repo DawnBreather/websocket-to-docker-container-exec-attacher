@@ -7,6 +7,7 @@ import (
 	. "github.com/docker/docker/api/types/container"
 	"log"
 	"quic_shell_server/db"
+	"strings"
 	"time"
 )
 
@@ -34,13 +35,13 @@ func StopAndDeleteContainersWithTtlExpired(ctx context.Context, client *DockerCl
 
 func StopContainerAndDelete(ctx context.Context, client *DockerClient, containerId string) error {
 	var err error
-	var timeout = 0
+	var timeout = 1
 	err = client.cli.ContainerStop(ctx, containerId, StopOptions{
 		Signal:  "9",
 		Timeout: &timeout,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to stop container { %s }", containerId)
+		return fmt.Errorf("failed to stop container { %s }: %s", containerId, err)
 	}
 
 	for {
@@ -60,8 +61,8 @@ func StopContainerAndDelete(ctx context.Context, client *DockerClient, container
 		Force:         true,
 	})
 
-	if err != nil {
-		return fmt.Errorf("failed to remove container { %s }", containerId)
+	if err != nil && !strings.Contains(err.Error(), "No such container") {
+		return fmt.Errorf("failed to remove container { %s }: %s", containerId, err)
 	}
 
 	for _, conn := range db.GetWsConnectionByContainerId(containerId) {
