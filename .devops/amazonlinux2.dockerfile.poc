@@ -1,0 +1,49 @@
+FROM amazonlinux:2
+RUN yum update -y
+RUN yum install -y curl git vim-enhanced systemd systemd-sysv net-tools iputils initscripts openssh-server nano sudo
+RUN amazon-linux-extras install epel
+RUN yum install -y figlet ruby
+RUN gem install lolcat
+RUN systemctl enable sshd
+
+ENV container docker
+RUN cd /lib/systemd/system/sysinit.target.wants/; \
+    for i in *; do [ $i = systemd-tmpfiles-setup.service ] || rm -f $i; done; \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*; \
+    rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+# Create a user 'user' with sudo privileges
+RUN useradd -m user && \
+    echo "user:user" | chpasswd && \
+    usermod -aG wheel user
+
+# Set up sudoers to allow 'user' to run sudo without password prompt
+RUN echo "user ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/user
+
+# Manually install Oh My Bash for 'user'
+RUN git clone --depth=1 https://github.com/ohmybash/oh-my-bash.git /home/user/.oh-my-bash && \
+    cp /home/user/.oh-my-bash/templates/bashrc.osh-template /home/user/.bashrc && \
+    echo 'export OSH=/home/user/.oh-my-bash' >> /home/user/.bashrc && \
+    echo 'OSH_THEME="font" # Set your favorite theme here' >> /home/user/.bashrc && \
+    # Add your custom lines here
+    echo 'alias ll="ls -la"' >> /home/user/.bashrc && \
+    echo 'export PATH="$PATH:/your/custom/path"' >> /home/user/.bashrc && \
+    # Add stty and figlet | lolcat commands
+    echo 'stty cols 200 rows 24' >> /home/user/.bashrc && \
+    echo "figlet 'Welcome to TNTK!' | lolcat" >> /home/user/.bashrc
+
+# Adjust ownership of the home directory
+RUN chown -R user:user /home/user
+# Welcome Message
+
+# Adjust ownership of the home directory
+RUN chown -R user:user /home/user
+
+VOLUME ["/sys/fs/cgroup"]
+
+CMD ["/sbin/init"]
