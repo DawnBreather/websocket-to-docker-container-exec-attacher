@@ -87,8 +87,9 @@ func (d *DockerClient) CreateAndStartContainer(image string, cmd []string, ttl i
 func (d *DockerClient) ExecIntoContainer(containerID string, cmd []string) error {
 	ctx := context.Background()
 	execID, err := d.cli.ContainerExecCreate(ctx, containerID, types.ExecConfig{
-		Cmd: cmd,
-		Tty: false,
+		Cmd:  cmd,
+		Tty:  false,
+		User: DefaultUserForExecIntoContainer,
 	})
 	if err != nil {
 		return err
